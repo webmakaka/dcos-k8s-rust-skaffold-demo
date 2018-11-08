@@ -1,65 +1,29 @@
-![Kubernetes on DC/OS](https://mesosphere.com/wp-content/uploads/2017/08/kubernetes-dcos-socialtwitter-800x343.png)
+# Deploying Rust to Kubernetes on minikube with Skaffold
 
-**WARNING**: *WORK IN PROGRESS* this demo is under active development and is not ready for general use
-
-# Deploying Rust to Kubernetes on DC/OS with Skaffold
-
-This is a demonstration project for using [Skaffold][0] to pipeline the development of your [Rust][1] web applications to [Kubernetes on DC/OS][2].
-
-If you're not already familiar with DC/OS or Kubernetes see the following:
-
-* https://dcos.io/
-* https://kubernetes.io/
+This is a demonstration project for using [Skaffold][0] to pipeline the development of your [Rust][1] web applications to Kubernetes on minikube.
 
 ## Overview
 
 This demo is divided up into several different steps:
 
-* Step 1 - Kubernetes Ingress
-* Step 2 - Base Rust Application
-* Step 3 - Deployment
-* Step 4 - Database
-* Step 5 - REST API
-* Step 6 - Conclusions
+* Step 1 - Base Rust Application
+* Step 2 - Deployment
+* Step 3 - Database
+* Step 4 - REST API
+* Step 5 - Conclusions
 
 ## Requirements
 
-* [DC/OS][43] 1.11+ cluster with the [Kubernetes framework installation prerequisites][5]
-* Kubernetes on DC/OS [1.3.0-1.10.8][12]+ cluster
-* [docker][3]
-* [kubectl][6]
+* [minikube][2]
+* [kubectl][5]
 * [skaffold][0]
 * [rust][1] using [rustup][47] (run `rustup default nightly-2018-09-17` to get the specific build for this demo)
 
-## Installing Kubernetes on DC/OS
-
-Installation steps can vary depending on version, see the [DC/OS Kubernetes Documentation][48] for a list of all versions and installation instructions and follow the instructions there until you have access to your cluster with `kubectl`.
-
-For developing this demonstration a cluster with 3 public nodes and 3 private nodes was used. Ensure that there is at least one public, and one private Kubernetes node in your cluster for this demo.
-
-# Step 1 - Kubernetes Ingress
-
-In this guide we'll set up our Kubernetes on DC/OS cluster with [ingress][13] to manage external access to services in the cluster via HTTP.
-
-## NGinx Ingress
-
-For this demo we will use [NGinx][14] as an [ingress][13] resource.
-
-Deploy NGinx ingress:
-
-```yaml
-kubectl create -f https://raw.githubusercontent.com/shaneutt/dcos-k8s-rust-skaffold-demo/master/k8s/ingress-nginx.yaml
-```
-
-The above will run the NGinx ingress controller as a [DaemonSet][50], deploying a copy of NGinx to each of your public nodes.
-
-For testing going forward, make sure you populate the `PUBLIC_NODE_IP` environment variable with the public IP address of one of your public DC/OS agents running a public Kubernetes node.
-
-# Step 2 - Base Rust App
+# Step 1 - Base Rust App
 
 In this step we're going to get our baseline application built.
 
-We're going to use [rocket.rs][16], a web framework for Rust that makes it simple to write web apps fast.
+We're going to use [rocket.rs][7], a web framework for Rust that makes it simple to write web apps fast.
 
 ## App Skeleton
 
@@ -165,15 +129,14 @@ CMD ["./rust-web-demo"]
 EOF
 ```
 
-* **NOTE**: the first `FROM` here pulls a nightly version of Rust because [rocket.rs][16] requires nightly to build
-* **NOTE**: as of writing this `cargo` [does not yet have a --dependencies-only build option][22] so there are some file removals and rebuilds used to improve Docker caching of builds
-* **NOTE**: a [multi-stage docker build][53] is used for this Dockerfile to build a small (<20MB) image for this app (based on [alpine][54])
+* **NOTE**: the first `FROM` here pulls a nightly version of Rust because [rocket.rs][7] requires nightly to build
+* **NOTE**: as of writing this `cargo` [does not yet have a --dependencies-only build option][10] so there are some file removals and rebuilds used to improve Docker caching of builds
+* **NOTE**: a [multi-stage docker build][29] is used for this Dockerfile to build a small (<20MB) image for this app (based on [alpine][30])
 
 Also create a `.dockerignore` file to avoid adding files that aren't needed in the docker build:
 
 ```
 cat <<'EOF' > .dockerignore
-dcos/
 k8s/
 target/
 migrations/
@@ -184,7 +147,7 @@ LICENSE
 EOF
 ```
 
-Throughout this demo it's assumed you're going to [push][23] your [Docker Image][24] to [Docker Hub][25] so make sure you're logged in with [docker login][26].
+Throughout this demo it's assumed you're going to [push][11] your [Docker Image][12] to [Docker Hub][13] so make sure you're logged in with [docker login][14].
 
 ## First Test
 
@@ -197,6 +160,10 @@ docker run -p 8000:8000 -d --name rust-web-demo rust-web-demo
 
 Access the demo by navigating to http://localhost:8000.
 
+```
+open http://localhost:8000
+```
+
 Clean up the container by running:
 
 ```
@@ -204,41 +171,29 @@ docker kill rust-web-demo
 docker rm rust-web-demo
 ```
 
-# Step 3 - Deployment with Skaffold
+# Step 2 - Deployment with Skaffold
 
 In this step we're going to start using [skaffold][0] to continuously ship updates to our code to our Kubernetes on DC/OS cluster.
 
-First we'll simply deploy the app with a basic [Kubernetes Deployment][19], but then we'll update it by adding a [PostgreSQL][20] container and watch Skaffold ship our changes out to Kubernetes.
+First we'll simply deploy the app with a basic [Kubernetes Deployment][8], but then we'll update it by adding a [PostgreSQL][9] container and watch Skaffold ship our changes out to Kubernetes.
 
 ## Kubernetes Deployment Manifest
 
-We will use a [Kubernetes Deployment][19] to run our application on the cluster via [Skaffold][0].
+We will use a [Kubernetes Deployment][8] to run our application on the cluster via [Skaffold][0].
 
 Create the manifest file `skaffold-deployment.yaml` with the following contents:
 
 ```yaml
 cat <<'EOF' > skaffold-deployment.yaml
-apiVersion: extensions/v1beta1
-kind: Ingress
-metadata:
-  name: rust-web-demo
-spec:
-  rules:
-  - host: DEMO_DOMAIN
-    http:
-      paths:
-      - backend:
-          serviceName: rust-web-demo
-          servicePort: 80
----
 apiVersion: v1
 kind: Service
 metadata:
   name: rust-web-demo
 spec:
+  type: NodePort
   ports:
-  - port: 80
-    targetPort: 8000
+  - port: 8000
+    protocol: TCP
   selector:
     app: rust-web-demo
 ---
@@ -247,7 +202,7 @@ kind: Deployment
 metadata:
   name: rust-web-demo
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: rust-web-demo
@@ -258,19 +213,15 @@ spec:
     spec:
       containers:
       - name: rust-web-demo
-        image: docker.io/YOUR_USERNAME/rust-web-demo
+        image: docker.io/gkleiman/rust-web-demo
         ports:
         - containerPort: 8000
 EOF
 ```
 
-In the above configuration, you'll need to change `DEMO_DOMAIN` to a hostname of your choosing, and `YOUR_USERNAME` to your Docker username. The `DEMO_DOMAIN` can practically be anything as we'll be avoiding DNS and using the [HTTP Host header][27] with `curl` to test our deployments.
-
-`${DEMO_DOMAIN}` will be used as an ENV variable for curl tests throughout the rest of this demo so export that variable now.
-
 ## Skaffold
 
-See [installation][28] on the Skaffold Github repo, and install the right version for your system.
+See [installation][15] on the Skaffold Github repo, and install the right version for your system.
 
 If everything is working, you should be able to run the following:
 
@@ -287,27 +238,20 @@ To configure Skaffold we're going to create the file `skaffold.yaml` with the fo
 
 ```yaml
 cat <<'EOF' > skaffold.yaml
-apiVersion: skaffold/v1alpha2
+apiVersion: skaffold/v1alpha5
 kind: Config
 build:
   artifacts:
-  - imageName: docker.io/YOUR_USERNAME/rust-web-demo
-    workspace: .
+  - image: docker.io/gkleiman/rust-web-demo
+    context: .
     docker: {}
-    bazel: null
-  local:
-    skipPush: null
-  googleCloudBuild: null
-  kaniko: null
+  local: {}
 deploy:
-  helm: null
   kubectl:
     manifests:
     - skaffold-deployment.yaml
 EOF
 ```
-
-Change `YOUR_USERNAME` to your Docker username.
 
 ## First Deployment
 
@@ -328,7 +272,7 @@ Your image will be built, pushed to Docker hub and deployed to your K8s cluster.
 You can check on the status of your `rust-web-demo` deployment with `kubectl get deployment rust-web-demo`. Once it's complete, you should soon be able to access your app with:
 
 ```
-curl -w '\n' -H "Host: ${DEMO_DOMAIN}" ${PUBLIC_NODE_IP}
+curl `minikube service rust-web-demo --url`
 ```
 
 Once everything is working, you'll receive the response `Rocket Webserver!`.
@@ -371,7 +315,7 @@ After running the above and making the changes to `src/main.rs`, skaffold should
 After the deployment finishes, test it with:
 
 ```
-curl -H "Host: ${DEMO_DOMAIN}" ${PUBLIC_NODE_IP}
+curl `minikube service rust-web-demo --url`
 ```
 
 You should receive the response `Skaffold updated me!`.
@@ -380,7 +324,7 @@ You should receive the response `Skaffold updated me!`.
 
 **WARNING**: The PostgreSQL deployment here is for demonstration purposes only. It's not HA, persistent, nor is it configured securely with SSL.
 
-Now we'll configure a minimal [PostgreSQL][20] Database and add it to our Kubernetes deployment and let Skaffold ship the changes up.
+Now we'll configure a minimal [PostgreSQL][9] Database and add it to our Kubernetes deployment and let Skaffold ship the changes up.
 
 Add a new deployment to `skaffold-deployment.yaml` for the PostgreSQL server:
 
@@ -392,6 +336,7 @@ kind: Service
 metadata:
   name: rust-web-demo-postgres
 spec:
+  type: NodePort
   ports:
   - port: 5432
     protocol: TCP
@@ -427,17 +372,17 @@ spec:
 EOF
 ```
 
-Note that you'll want to update `DEMO_DOMAIN` and `YOUR_USERNAME` in the above file, as with before. Also at the bottom where a service and a deployment for postgres have been added you'll want to change the password value `changeme` to something else.
+Note that you'll want to change the password value `changeme` to something else.
 
 After you've saved the changes to the file, Skaffold will start updating your deployment, add your database and expose the database interally throughout the k8s cluster.
 
-# Step 4 - Diesel
+# Step 3 - Diesel
 
-In this step we'll add [Diesel][30], an ORM for Rust which we'll use to interface with our [PostgreSQL][20] service.
+In this step we'll add [Diesel][16], an ORM for Rust which we'll use to interface with our [PostgreSQL][9] service.
 
 ## Database Proxy
 
-For convenience, we'll set up a [port forward][31] to our PostgreSQL instance running in Kubernetes so we can deploy schema updates to it remotely. If you take this demo further, you may want to use something like [Kubernetes init containers][51] to run migrations.
+For convenience, we'll set up a [port forward][17] to our PostgreSQL instance running in Kubernetes so we can deploy schema updates to it remotely. If you take this demo further, you may want to use something like [Kubernetes init containers][27] to run migrations.
 
 Dedicate a terminal to running the forwarder. Run the following:
 
@@ -455,11 +400,11 @@ psql -U diesel -h localhost -p 5432 -d rust-web-demo
 
 ## Diesel Set Up & Configuration
 
-Diesel comes with a [CLI][32] to help us manage our project, and makes it easy to generate, run, and revert database migrations.
+Diesel comes with a [CLI][18] to help us manage our project, and makes it easy to generate, run, and revert database migrations.
 
 ### Diesel CLI
 
-Install the [Diesel CLI][32] using `cargo` (you may need to install PostgreSQL development libraries on your system):
+Install the [Diesel CLI][18] using `cargo` (you may need to install PostgreSQL development libraries on your system):
 
 ```
 cargo install diesel_cli --no-default-features --features postgres
@@ -631,7 +576,7 @@ You should now be able to run `psql -U diesel -h localhost -p 5432 -d rust-web-d
 
 We'll add the `DATABASE_URL` to the environment variables for our app container in `skaffold-deployment.yaml` so that the app can use the db.
 
-We'll need to add a [k8s secret][33] to store the sensitive value and use it in the container.
+We'll need to add a [k8s secret][19] to store the sensitive value and use it in the container.
 
 Add the following to the `skaffold-deployment.yaml`:
 
@@ -658,7 +603,7 @@ echo -n 'postgres://diesel:changeme@rust-web-demo-postgres:5432/rust-web-demo' |
 
 Replacing the `postgres://` parts as needed.
 
-Now to [use the secret as an environment variable][34] you need to update the `rust-web-demo` container to look like this:
+Now to [use the secret as an environment variable][20] you need to update the `rust-web-demo` container to look like this:
 
 ```yaml
 ---
@@ -667,7 +612,7 @@ kind: Deployment
 metadata:
   name: rust-web-demo
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: rust-web-demo
@@ -678,7 +623,7 @@ spec:
     spec:
       containers:
       - name: rust-web-demo
-        image: docker.io/YOUR_USERNAME/rust-web-demo
+        image: docker.io/gkleiman/rust-web-demo
         ports:
         - containerPort: 8000
         env:
@@ -688,8 +633,6 @@ spec:
               name: rust-web-demo-database-url
               key: url
 ```
-
-Changing `YOUR_USERNAME` to your Docker username as with before.
 
 Note that when you save the file, this is going to trigger a rebuild of the PostgreSQL container via Skaffold so give it a few seconds.
 
@@ -724,7 +667,7 @@ fn hello() -> String {
         .load::<Employee>(&db)
         .expect("Error loading Employees");
 
-    format!("default employee: {} {}\n", results[0].fname, results[0].lname)
+    format!("Default Employee: {} {}\n", results[0].fname, results[0].lname)
 }
 
 fn main() {
@@ -744,7 +687,7 @@ EOF
 After you write these changes, Skaffold will ship it off to the cluster and you'll soon be able to check it out with:
 
 ```
-curl -H "Host: ${DEMO_DOMAIN}" ${PUBLIC_NODE_IP}
+curl `minikube service rust-web-demo --url`
 ```
 
 If everything is working you should receive:
@@ -755,7 +698,7 @@ Default Employee: some person
 
 # REST API with Rocket
 
-In this step we will expand our use of Rocket and Diesel to make a minimal demonstration [REST][35] API.
+In this step we will expand our use of Rocket and Diesel to make a minimal demonstration [REST][21] API.
 
 We will implement GET, PUT, POST, and DELETE methods which will utilize our PostgreSQL database.
 
@@ -805,7 +748,7 @@ EOF
 
 ## Adding Forms
 
-We'll need a serializable [Rocket Form][37] to make it simple to accept `Employee` related parameters in HTTP requests for GET, PUT, POST, and DELETE.
+We'll need a serializable [Rocket Form][22] to make it simple to accept `Employee` related parameters in HTTP requests for GET, PUT, POST, and DELETE.
 
 Add the new file `src/forms.rs` with the following contents:
 
@@ -955,7 +898,7 @@ pub fn gen_errors() -> Vec<Catcher> {
 EOF
 ```
 
-Note that there are some inefficiencies with our methods, such as creating a database connection for each method call. This was left simple for demonstration purposes, but we will revisit this and talk about some potential improvements (such as using Rocket's [Managed State][38] with [Diesel R2D2 connection pooling][39]) at the end.
+Note that there are some inefficiencies with our methods, such as creating a database connection for each method call. This was left simple for demonstration purposes, but we will revisit this and talk about some potential improvements (such as using Rocket's [Managed State][23] with [Diesel R2D2 connection pooling][24]) at the end.
 
 # Bringing it all together
 
@@ -1009,18 +952,18 @@ Once you've saved the changes to this file and all the other files added and mod
 Once Skaffold has finished its work and your app is fully deployed, you should be able to GET the initial `Employee` from our migrations:
 
 ```
-curl -s -w '\n%{http_code}\n' -H "Host: ${DEMO_DOMAIN}" http://${PUBLIC_NODE_IP}/employees/1
+curl -s -w '\n%{http_code}\n' "$(minikube service rust-web-demo --url)/employees/1"
 ```
 
-You should receive a 200 HTTP Ok and the JSON of the `Employee`.
+You should receive a 200 HTTP OK and the JSON of the `Employee`.
 
 You should also be able to see the initial `Employee` in an `EmployeeList`:
 
 ```
-curl -s -w '\n%{http_code}\n' -H "Host: ${DEMO_DOMAIN}" http://${PUBLIC_NODE_IP}/employees
+curl -s -w '\n%{http_code}\n' "$(minikube service rust-web-demo --url)/employees"
 ```
 
-You should receive a 200 HTTP Ok and the JSON of the `EmployeeList`.
+You should receive a 200 HTTP OK and the JSON of the `EmployeeList`.
 
 ### PUT
 
@@ -1028,10 +971,9 @@ You can add a new `Employee`:
 
 ```
 curl -s -w '\n%{http_code}\n' -X PUT \
-    -H "Host: ${DEMO_DOMAIN}" \
     -H 'Content-Type: application/json' \
     -d '{"fname":"new", "lname":"person", "age": 27, "title":"Devops Engineer"}' \
-    http://${PUBLIC_NODE_IP}/employees
+    "$(minikube service rust-web-demo --url)/employees"
 ```
 
 You should receive a 201 Created.
@@ -1042,10 +984,9 @@ You can update some information on that `Employee` with a POST:
 
 ```
 curl -s -w '\n%{http_code}\n' -X POST \
-    -H "Host: ${DEMO_DOMAIN}" \
     -H 'Content-Type: application/json' \
     -d '{"age": 29}' \
-    http://${PUBLIC_NODE_IP}/employees/<employee_id>
+    "$(minikube service rust-web-demo --url)/employees/<employee_id>"
 ```
 
 In the above `<employee_id>` will be whatever you received for the `id` in the PUT operation above (probably it will be 2 at this point unless you've done further experimentation).
@@ -1053,7 +994,7 @@ In the above `<employee_id>` will be whatever you received for the `id` in the P
 Now you can get a new `EmployeeList` and see the previous entries plus your newly created (and updated) entry:
 
 ```
-curl -s -w '\n%{http_code}\n' -H "Host: ${DEMO_DOMAIN}" http://${PUBLIC_NODE_IP}/employees
+curl -s -w '\n%{http_code}\n' "$(minikube service rust-web-demo --url)/employees"
 ```
 
 ### DELETE
@@ -1063,77 +1004,47 @@ When you're done you can delete the created employee(s):
 ```
 curl -s -w '\n%{http_code}\n' -X DELETE \
     -H 'Content-Type: application/json' \
-    -H "Host: ${DEMO_DOMAIN}" \
-    http://${PUBLIC_NODE_IP}/employees/<employee_id>
+    "$(minikube service rust-web-demo --url)/employees/<employee_id>"
 ```
 
 # Cleanup & Conclusion
 
-If you would like to cleanup the resources deployed in this demo you can use `CTRL+C` to stop skaffold, which will cause it to clean up it's resources, and then you can remove the NGinx ingress components with:
+If you would like to cleanup the resources deployed in this demo you can use `CTRL+C` to stop skaffold, which will cause it to clean up it's resources.
 
-```
-kubectl delete -f https://raw.githubusercontent.com/shaneutt/dcos-k8s-rust-skaffold-demo/master/k8s/ingress-nginx.yaml
-```
+In this demo we built and deployed an app on minikube, expanded on our app using Diesel and Rocket and watched Skaffold build and ship the results in the background while we were making changes. If you like building web applications with Diesel and Rocket, we recommend following up by reading the [Diesel Documentation][25] and the [Rocket Documentation][41] to continue learning.
 
-In this demo we deployed Kubernetes on DC/OS, set up NGinx as Ingress, built and deployed an app, expanded on our app using Diesel and Rocket and watched Skaffold build and ship the results in the background while we were making changes. If you like building web applications with Diesel and Rocket, I recommend following up by reading the [Diesel Documentation][40] and the [Rocket Documentation][41] to continue learning.
-
-Throughout our demonstration we did something things simply to avoid overcomplicating the code examples, if you decide you'd like to continue building off of the examples here for your own application you may want to look into using [Diesel Connection Pooling][39] to avoid separate connections for each request, and storing the connection pool via [Rocket Managed State][38]. You'll want to investigate some HA set ups for PostgreSQL, potentially something like [PostgreSQL XL][52]. You'll also want to develop some pagination layer on top of the GET methods in the examples, and implement further search functionality.
+Throughout our demonstration we did something things simply to avoid overcomplicating the code examples, if you decide you'd like to continue building off of the examples here for your own application you may want to look into using [Diesel Connection Pooling][24] to avoid separate connections for each request, and storing the connection pool via [Rocket Managed State][23]. You'll want to investigate some HA set ups for PostgreSQL, potentially something like [PostgreSQL XL][28]. You'll also want to develop some pagination layer on top of the GET methods in the examples, and implement further search functionality.
 
 It's encouraged to read more on [Skaffold][0] to get to better know more of the options and features avaiable.
 
-For more information about Kubernetes on DC/OS, see [Mesosphere's Kubernetes service page][42].
-
-If you'd like help with DC/OS see the [DC/OS Documentation][43] or [Contact Mesosphere][44].
-
 [0]:https://github.com/GoogleCloudPlatform/skaffold
 [1]:https://www.rust-lang.org
-[2]:https://docs.mesosphere.com/services/kubernetes/
+[2]:https://kubernetes.io/docs/tasks/tools/install-minikube/
 [3]:https://docs.docker.com/install/
 [4]:https://www.rust-lang.org/install.html
-[5]:https://docs.mesosphere.com/services/kubernetes/1.3.0-1.10.8/install/
-[6]:https://kubernetes.io/docs/tasks/tools/install-kubectl/
-[8]:https://docs.mesosphere.com/services/kubernetes/1.3.0-1.10.8/quick-start/
-[9]:https://www.gnu.org/software/make/
-[11]:https://dcos.io/docs/latest/cli/
-[12]:https://docs.mesosphere.com/services/kubernetes/1.3.0-1.10.8/
-[13]:https://kubernetes.io/docs/concepts/services-networking/ingress/
-[14]:https://nginx.org
-[15]:https://kubernetes.io/docs/admin/service-accounts-admin/
-[16]:https://rocket.rs
-[17]:https://doc.rust-lang.org/cargo/reference/manifest.html
-[18]:https://github.com/GoogleCloudPlatform/skaffold
-[19]:https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
-[20]:https://www.postgresql.org/
-[22]:https://github.com/rust-lang/cargo/issues/2644
-[23]:https://docs.docker.com/engine/reference/commandline/push/
-[24]:https://docs.docker.com/engine/reference/commandline/images/
-[25]:https://hub.docker.com/
-[26]:https://docs.docker.com/engine/reference/commandline/login/
-[27]:https://developer.mozilla.org/docs/Web/HTTP/Headers/Host
-[28]:https://github.com/GoogleCloudPlatform/skaffold#installation
-[29]:https://docs.docker.com/engine/reference/commandline/login/
-[30]:https://diesel.rs
-[31]:https://kubernetes.io/docs/tasks/access-application-cluster/port-forward-access-application-cluster/
-[32]:https://github.com/diesel-rs/diesel/tree/master/diesel_cli
-[33]:https://kubernetes.io/docs/concepts/configuration/secret/
-[34]:https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables
-[35]:https://en.wikipedia.org/wiki/Representational_state_transfer
-[36]:https://github.com/serde-rs/serde
-[37]:https://rocket.rs/guide/requests/#forms
-[38]:https://rocket.rs/guide/state/#managed-state
-[39]:https://github.com/diesel-rs/r2d2-diesel
-[40]:https://docs.diesel.rs/diesel/index.html
-[41]:https://api.rocket.rs/rocket/
-[42]:https://docs.mesosphere.com/services/kubernetes/
-[43]:https://docs.mesosphere.com/
-[44]:https://mesosphere.com/contact/
-[45]:https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
-[46]:https://rocket.rs/guide/getting-started/#installing-rust
-[47]:https://rustup.rs
-[48]:https://docs.mesosphere.com/services/kubernetes/
-[49]:https://doc.rust-lang.org/book/second-edition/ch14-01-release-profiles.html
-[50]:https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/
-[51]:https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
-[52]:https://www.postgres-xl.org/
-[53]:https://docs.docker.com/develop/develop-images/multistage-build/
-[54]:https://www.alpinelinux.org/
+[5]:https://kubernetes.io/docs/tasks/tools/install-kubectl/
+[6]:https://kubernetes.io/docs/admin/service-accounts-admin/
+[7]:https://rocket.rs
+[8]:https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
+[9]:https://www.postgresql.org/
+[10]:https://github.com/rust-lang/cargo/issues/2644
+[11]:https://docs.docker.com/engine/reference/commandline/push/
+[12]:https://docs.docker.com/engine/reference/commandline/images/
+[13]:https://hub.docker.com/
+[14]:https://docs.docker.com/engine/reference/commandline/login/
+[15]:https://github.com/GoogleCloudPlatform/skaffold#installation
+[16]:https://diesel.rs
+[17]:https://kubernetes.io/docs/tasks/access-application-cluster/port-forward-access-application-cluster/
+[18]:https://github.com/diesel-rs/diesel/tree/master/diesel_cli
+[19]:https://kubernetes.io/docs/concepts/configuration/secret/
+[20]:https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables
+[21]:https://en.wikipedia.org/wiki/Representational_state_transfer
+[22]:https://rocket.rs/guide/requests/#forms
+[23]:https://rocket.rs/guide/state/#managed-state
+[24]:https://github.com/diesel-rs/r2d2-diesel
+[25]:https://docs.diesel.rs/diesel/index.html
+[26]:https://rustup.rs
+[27]:https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
+[28]:https://www.postgres-xl.org/
+[29]:https://docs.docker.com/develop/develop-images/multistage-build/
+[30]:https://www.alpinelinux.org/
