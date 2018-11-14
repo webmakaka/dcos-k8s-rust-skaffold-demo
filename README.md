@@ -223,15 +223,6 @@ EOF
 
 See [installation][15] on the Skaffold Github repo, and install the right version for your system.
 
-If everything is working, you should be able to run the following:
-
-```
-$ skaffold version
-latest
-```
-
-Make sure you are on the latest Skaffold release.
-
 ## Skaffold Configuration
 
 To configure Skaffold we're going to create the file `skaffold.yaml` with the following contents:
@@ -466,25 +457,6 @@ Now that we have `up.sql` and `down.sql` set up, we can run our first migrations
 diesel migration run
 ```
 
-You can test that `down.sql` is working by running:
-
-```
-diesel migration redo
-```
-
-The above will revert, and then re-apply the migration.
-
-Now if you run `psql -U diesel -h localhost -p 5432 -d rust-web-demo -c '\dt'` you should see the following showing that the migration ran succesfully:
-
-```
-                  List of relations
- Schema |            Name            | Type  | Owner
---------+----------------------------+-------+--------
- public | __diesel_schema_migrations | table | diesel
- public | employees                  | table | diesel
-(2 rows)
-```
-
 ## Updating our Rust App with Diesel
 
 At this point diesel_cli is installed, configured, and we've set up and run our first migration.
@@ -594,14 +566,6 @@ EOF
 ```
 
 The value for `key` is base64 encoded `DATABASE_URL` and the `value` is base64 of `postgres://diesel:changeme@rust-web-demo-postgres:5432/rust-web-demo`.
-
-You'll want to update the `value` to contain your own base64 encoded `DATABASE_URL`, which can be easily done with:
-
-```
-echo -n 'postgres://diesel:changeme@rust-web-demo-postgres:5432/rust-web-demo' | base64
-```
-
-Replacing the `postgres://` parts as needed.
 
 Now to [use the secret as an environment variable][20] you need to update the `rust-web-demo` container to look like this:
 
