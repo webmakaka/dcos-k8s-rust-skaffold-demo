@@ -455,6 +455,7 @@ Now that we have `up.sql` and `down.sql` set up, we can run our first migrations
 
 ```
 diesel migration run
+diesel migration redo
 ```
 
 ## Updating our Rust App with Diesel
