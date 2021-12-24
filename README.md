@@ -1,5 +1,8 @@
 # Deploying Rust to Kubernetes on minikube with Skaffold
 
+[YouTube conference recording](https://www.youtube.com/watch?v=9S1-69Rp1vQ)
+
+
 This is a demonstration project for using [Skaffold][0] to pipeline the development of your [Rust][1] web applications to Kubernetes on minikube.
 
 ## Overview
