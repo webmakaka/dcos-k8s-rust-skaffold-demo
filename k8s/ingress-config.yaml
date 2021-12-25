@@ -1,0 +1,12 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: rust-web-demo
+spec:
+  rules:
+  - host: DEMO_DOMAIN
+    http:
+      paths:
+      - backend:
+          serviceName: rust-web-demo
+          servicePort: 80

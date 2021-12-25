@@ -6,3 +6,4 @@ skaffold.yaml
 skaffold-deployment.yaml
 Cargo.lock
 LICENSE
+PGDATA/

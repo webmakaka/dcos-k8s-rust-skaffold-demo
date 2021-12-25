@@ -2,6 +2,45 @@
 
 [YouTube conference recording](https://www.youtube.com/watch?v=9S1-69Rp1vQ)
 
+<br/>
+
+```
+$ sudo apt-get install libpq-dev
+```
+
+<br/>
+
+```
+$ docker-compose up
+```
+
+<br/>
+
+<!--
+
+```
+$ diesel setup --database-url=database.postgres
+```
+-->
+
+```
+$ cargo install diesel_cli --no-default-features --features postgres
+$ diesel migration run
+```
+
+<br/>
+
+```
+$ cargo run
+```
+
+<br/>
+
+```
+$ curl http://127.0.0.1:8000/employees
+```
+
+<br/>
 
 This is a demonstration project for using [Skaffold][0] to pipeline the development of your [Rust][1] web applications to Kubernetes on minikube.
 
