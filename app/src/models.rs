@@ -1,4 +1,4 @@
-use schema::employees;
+use super::schema::employees;
 
 #[derive(Clone, Debug, Serialize, Deserialize, Queryable, Insertable)]
 #[table_name = "employees"]

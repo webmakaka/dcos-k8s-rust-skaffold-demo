@@ -1,4 +1,6 @@
-FROM rustlang/rust@sha256:b62c21120fa9ef720e76f75fcdb53926ddace89feb2e21a1b5944554499aee86
+#FROM rust:1.57-slim
+FROM rust:1.57
+# FROM rustlang/rust@sha256:b62c21120fa9ef720e76f75fcdb53926ddace89feb2e21a1b5944554499aee86
 
 RUN apt-get update
 
@@ -32,7 +34,7 @@ FROM alpine:latest
 
 RUN apk add --no-cache libpq
 
-WORKDIR /root/
+WORKDIR /app/
 
 COPY --from=0 /usr/src/rust-web-demo/target/x86_64-unknown-linux-musl/release/rust-web-demo .
 

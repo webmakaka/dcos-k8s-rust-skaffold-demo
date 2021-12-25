@@ -1,6 +1,6 @@
-use schema::employees;
+use super::schema::employees;
 
-#[derive(Clone, Debug, Serialize, Deserialize, FromForm, Insertable, AsChangeset)]
+#[derive(Clone, Debug, Serialize, Deserialize, rocket::FromForm, Insertable, AsChangeset)]
 #[table_name = "employees"]
 pub struct EmployeeForm {
     pub id:    Option<i32>,

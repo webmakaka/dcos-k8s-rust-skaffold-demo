@@ -4,18 +4,18 @@ use diesel::prelude::*;
 use rocket;
 use rocket::{Catcher, Route, Request};
 use rocket::response::status::{BadRequest, Created, NoContent};
-use rocket_contrib::Json;
+use rocket::serde::json::Json;
 
-use errors::ApiError;
-use forms::EmployeeForm;
-use models::{Employee, EmployeeList};
-use postgres::connect as dbc;
+use crate::errors::ApiError;
+use crate::forms::EmployeeForm;
+use crate::models::{Employee, EmployeeList};
+use crate::postgres::connect as dbc;
 
 // -----------------------------------------------------------------------------
 // HTTP Errors
 // -----------------------------------------------------------------------------
 
-#[catch(404)]
+#[rocket::catch(404)]
 fn not_found(_: &Request) -> Json<ApiError> {
     Json(ApiError{
         message: "not found".to_string(),
@@ -26,9 +26,9 @@ fn not_found(_: &Request) -> Json<ApiError> {
 // HTTP GET, PUT, POST & DELETE
 // -----------------------------------------------------------------------------
 
-#[get("/employees", format = "application/json")]
+#[rocket::get("/employees", format = "application/json")]
 fn employee_list() -> Json<EmployeeList> {
-    use schema::employees::dsl::*;
+    use super::schema::employees::dsl::*;
 
     let db = dbc();
     let results = employees.load::<Employee>(&db)
@@ -39,9 +39,9 @@ fn employee_list() -> Json<EmployeeList> {
     })
 }
 
-#[get("/employees/<employee_id>", format = "application/json")]
+#[rocket::get("/employees/<employee_id>", format = "application/json")]
 fn employee_get(employee_id: i32) -> Option<Json<Employee>> {
-    use schema::employees::dsl::*;
+    use super::schema::employees::dsl::*;
 
     let db = dbc();
     match employees.find(employee_id).first::<Employee>(&db) {
@@ -50,9 +50,9 @@ fn employee_get(employee_id: i32) -> Option<Json<Employee>> {
     }
 }
 
-#[put("/employees", format = "application/json", data = "<json_employee>")]
+#[rocket::put("/employees", format = "application/json", data = "<json_employee>")]
 fn employee_put(json_employee: Json<EmployeeForm>) -> Result<Created<()>, BadRequest<String>> {
-    use schema::employees::dsl::*;
+    use super::schema::employees::dsl::*;
 
     let mut new_employee = json_employee.into_inner();
     new_employee.id = None;
@@ -71,9 +71,9 @@ fn employee_put(json_employee: Json<EmployeeForm>) -> Result<Created<()>, BadReq
     }
 }
 
-#[post("/employees/<employee_id>", format = "application/json", data = "<json_employee>")]
+#[rocket::post("/employees/<employee_id>", format = "application/json", data = "<json_employee>")]
 fn employee_update(employee_id: i32, json_employee: Json<EmployeeForm>) -> Result<NoContent, BadRequest<String>> {
-    use schema::employees::dsl::*;
+    use super::schema::employees::dsl::*;
 
     let employee = json_employee.into_inner();
     let update = update(employees.filter(id.eq(employee_id)))
@@ -89,9 +89,9 @@ fn employee_update(employee_id: i32, json_employee: Json<EmployeeForm>) -> Resul
     }
 }
 
-#[delete("/employees/<employee_id>", format = "application/json")]
+#[rocket::delete("/employees/<employee_id>", format = "application/json")]
 fn employee_delete(employee_id: i32) -> Option<NoContent> {
-    use schema::employees::dsl::*;
+    use super::schema::employees::dsl::*;
 
     let db = dbc();
     let deleted = delete(employees.find(employee_id)).execute(&db)
@@ -109,9 +109,9 @@ fn employee_delete(employee_id: i32) -> Option<NoContent> {
 // -----------------------------------------------------------------------------
 
 pub fn gen_routes() -> Vec<Route> {
-    routes![employee_list, employee_get, employee_put, employee_update, employee_delete]
+    rocket::routes![employee_list, employee_get, employee_put, employee_update, employee_delete]
 }
 
 pub fn gen_errors() -> Vec<Catcher> {
-    catchers![not_found]
+    rocket::catchers![not_found]
 }
