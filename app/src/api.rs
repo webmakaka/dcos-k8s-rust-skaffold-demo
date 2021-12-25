@@ -61,9 +61,7 @@ fn employee_put(json_employee: Json<EmployeeForm>) -> Result<Created<()>, BadReq
 
     let db = dbc();
     match insert.execute(&db) {
-        Ok(_) => {
-            Ok(Created("/employees".to_string(), Some(())))
-        },
+        Ok(_) =>  Ok(Created::new("/employees".to_string())),
         Err(err) => {
             let err = json!({"error": err.to_string()});
             Err(BadRequest(Some(err.to_string())))
@@ -110,7 +108,6 @@ fn employee_delete(employee_id: i32) -> Option<NoContent> {
 
 pub fn gen_routes() -> Vec<Route> {
     rocket::routes![employee_list, employee_get, employee_put, employee_update, employee_delete]
-    // rocket::routes![employee_list, employee_get, employee_update, employee_delete]
 }
 
 pub fn gen_errors() -> Vec<Catcher> {

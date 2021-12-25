@@ -2,6 +2,11 @@
 
 [YouTube conference recording](https://www.youtube.com/watch?v=9S1-69Rp1vQ)
 
+
+<br/>
+
+## Run Local
+
 <br/>
 
 ```
@@ -16,12 +21,6 @@ $ docker-compose up
 
 <br/>
 
-<!--
-
-```
-$ diesel setup --database-url=database.postgres
-```
--->
 
 ```
 $ cargo install diesel_cli --no-default-features --features postgres
@@ -36,11 +35,55 @@ $ cargo run
 
 <br/>
 
+### Using the API
+
+### GET
+
 ```
-$ curl http://127.0.0.1:8000/employees
+// GET ALL
+$ curl -s -w '\n%{http_code}\n' "localhost:8000/employees"
 ```
 
+```
+// GET BY ID
+$ curl -s -w '\n%{http_code}\n' "localhost:8000/employees/<employee_id>"
+```
+
+### PUT
+
+```
+// ADD NEW
+$ curl -s -w '\n%{http_code}\n' -X PUT \
+    -H 'Content-Type: application/json' \
+    -d '{"fname":"new", "lname":"person", "age": 27, "title":"Devops Engineer"}' \
+    "localhost:8000/employees"
+```
+
+You should receive a 201 Created.
+
+### POST
+
+```
+// UPDATE
+$ curl -s -w '\n%{http_code}\n' -X POST \
+    -H 'Content-Type: application/json' \
+    -d '{"age": 29}' \
+    "http://localhost:8000/employees/<employee_id>"
+```
+
+### DELETE
+
+```
+// DELETE
+$ curl -s -w '\n%{http_code}\n' -X DELETE \
+    -H 'Content-Type: application/json' \
+    "http://localhost:8000/employees/<employee_id>"
+```
+
+
 <br/>
+
+### Run in kubernetes
 
 This is a demonstration project for using [Skaffold][0] to pipeline the development of your [Rust][1] web applications to Kubernetes on minikube.
 
@@ -1013,45 +1056,3 @@ curl -s -w '\n%{http_code}\n' -X DELETE \
     -H 'Content-Type: application/json' \
     "$(minikube service rust-web-demo --url)/employees/<employee_id>"
 ```
-
-# Cleanup & Conclusion
-
-If you would like to cleanup the resources deployed in this demo you can use `CTRL+C` to stop skaffold, which will cause it to clean up it's resources.
-
-In this demo we built and deployed an app on minikube, expanded on our app using Diesel and Rocket and watched Skaffold build and ship the results in the background while we were making changes. If you like building web applications with Diesel and Rocket, we recommend following up by reading the [Diesel Documentation][25] and the [Rocket Documentation][41] to continue learning.
-
-Throughout our demonstration we did something things simply to avoid overcomplicating the code examples, if you decide you'd like to continue building off of the examples here for your own application you may want to look into using [Diesel Connection Pooling][24] to avoid separate connections for each request, and storing the connection pool via [Rocket Managed State][23]. You'll want to investigate some HA set ups for PostgreSQL, potentially something like [PostgreSQL XL][28]. You'll also want to develop some pagination layer on top of the GET methods in the examples, and implement further search functionality.
-
-It's encouraged to read more on [Skaffold][0] to get to better know more of the options and features avaiable.
-
-[0]:https://github.com/GoogleCloudPlatform/skaffold
-[1]:https://www.rust-lang.org
-[2]:https://kubernetes.io/docs/tasks/tools/install-minikube/
-[3]:https://docs.docker.com/install/
-[4]:https://www.rust-lang.org/install.html
-[5]:https://kubernetes.io/docs/tasks/tools/install-kubectl/
-[6]:https://kubernetes.io/docs/admin/service-accounts-admin/
-[7]:https://rocket.rs
-[8]:https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
-[9]:https://www.postgresql.org/
-[10]:https://github.com/rust-lang/cargo/issues/2644
-[11]:https://docs.docker.com/engine/reference/commandline/push/
-[12]:https://docs.docker.com/engine/reference/commandline/images/
-[13]:https://hub.docker.com/
-[14]:https://docs.docker.com/engine/reference/commandline/login/
-[15]:https://github.com/GoogleCloudPlatform/skaffold#installation
-[16]:https://diesel.rs
-[17]:https://kubernetes.io/docs/tasks/access-application-cluster/port-forward-access-application-cluster/
-[18]:https://github.com/diesel-rs/diesel/tree/master/diesel_cli
-[19]:https://kubernetes.io/docs/concepts/configuration/secret/
-[20]:https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables
-[21]:https://en.wikipedia.org/wiki/Representational_state_transfer
-[22]:https://rocket.rs/guide/requests/#forms
-[23]:https://rocket.rs/guide/state/#managed-state
-[24]:https://github.com/diesel-rs/r2d2-diesel
-[25]:https://docs.diesel.rs/diesel/index.html
-[26]:https://rustup.rs
-[27]:https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
-[28]:https://www.postgres-xl.org/
-[29]:https://docs.docker.com/develop/develop-images/multistage-build/
-[30]:https://www.alpinelinux.org/
