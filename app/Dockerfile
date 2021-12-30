@@ -1,41 +1,30 @@
-#FROM rust:1.57-slim
-FROM rust:1.57
-# FROM rustlang/rust@sha256:b62c21120fa9ef720e76f75fcdb53926ddace89feb2e21a1b5944554499aee86
+FROM rust:1.57 as builder
+# FROM rust:1.57.0-alpine3.14
 
-RUN apt-get update
+# RUN apk update
+RUN apt-get update -y && apt upgrade -y
 
-RUN apt-get install musl-tools -y
+# RUN apt-get install musl-tools -y
 
-RUN rustup target add x86_64-unknown-linux-musl
+# RUN rustup target add x86_64-unknown-linux-musl
 
-WORKDIR /usr/src/rust-web-demo
+WORKDIR /build
 
-COPY Cargo.toml Cargo.toml
+COPY ./ ./
 
-RUN mkdir src/
+RUN cargo build --release
 
-RUN echo "extern crate rocket;\nfn main() {println!(\"if you see this, the build broke\")}" > src/main.rs
 
-RUN RUSTFLAGS=-Clinker=musl-gcc cargo build --release --target=x86_64-unknown-linux-musl
+# FROM alpine:3.15
+# FROM rust:1.57.0-alpine3.14
+FROM rust:1.57 as runner
 
-RUN rm -rf src/
+# RUN apk add --no-cache libpq
+RUN apt update -y && apt upgrade -y
+RUN apt-get install -y libpq-dev iputils-ping
 
-RUN rm -f /usr/src/rust-web-demo/target/x86_64-unknown-linux-musl/release/rust-web-demo*
+WORKDIR /app
 
-RUN rm -f /usr/src/rust-web-demo/target/x86_64-unknown-linux-musl/release/deps/rust_web_demo*
-
-RUN rm -f /usr/src/rust-web-demo/target/x86_64-unknown-linux-musl/release/rust-web-demo.d
-
-COPY src/* src/
-
-RUN RUSTFLAGS=-Clinker=musl-gcc cargo build --release --target=x86_64-unknown-linux-musl
-
-FROM alpine:latest
-
-RUN apk add --no-cache libpq
-
-WORKDIR /app/
-
-COPY --from=0 /usr/src/rust-web-demo/target/x86_64-unknown-linux-musl/release/rust-web-demo .
+COPY --from=builder /build/target/release/rust-web-demo .
 
 CMD ["./rust-web-demo"]

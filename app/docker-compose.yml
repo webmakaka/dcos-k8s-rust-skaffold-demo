@@ -1,5 +1,26 @@
 version: '3'
 services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    container_name: rust-app
+    hostname: rust-app
+    ports:
+      - ${ROCKET_PORT}:${ROCKET_PORT}
+    depends_on:
+      - postgres
+    environment:
+      - ROCKET_PORT=${ROCKET_PORT}
+      - ROCKET_ENV=${ROCKET_ENV}
+      - ROCKET_ADDRESS=${ROCKET_ADDRESS}
+      - DATABASE_URL=${DATABASE_URL}
+    # volumes:
+    #   - /app/node_modules
+    #   - ./app:/app
+    image: webmakaka/rust-app
+
   postgres:
     container_name: postgres
     image: postgres:14.1-alpine
@@ -11,5 +32,10 @@ services:
       POSTGRES_DB: ${DATABASE_NAME}
       POSTGRES_USER: ${DATABASE_USER}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
-    volumes:
-      - ./PGDATA:/var/lib/postgresql/data
+    # volumes:
+    #   - ./PGDATA:/var/lib/postgresql/data
+
+networks:
+  default:
+    driver: bridge
+    name: rust-app-network

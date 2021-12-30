@@ -10,13 +10,26 @@
 <br/>
 
 ```
-$ sudo apt-get install libpq-dev
+$ sudo apt-get install libpq-dev jq
 ```
 
 <br/>
 
 ```
-$ docker-compose up
+$ sudo vi /etc/hosts
+```
+
+<br/>
+
+```
+127.0.0.1 postgres
+```
+
+<br/>
+
+```
+// run database
+$ docker-compose up postgres
 ```
 
 <br/>
@@ -33,21 +46,21 @@ $ diesel migration run
 $ cargo run
 ```
 
+
 <br/>
 
-### Using the API
-
-### GET
+## Run in docker
 
 ```
-// GET ALL
-$ curl -s -w '\n%{http_code}\n' "localhost:8000/employees"
-```
+// compile app
+$ docker-compose up --build
 
 ```
-// GET BY ID
-$ curl -s -w '\n%{http_code}\n' "localhost:8000/employees/<employee_id>"
-```
+
+<br/>
+
+## Using the API
+
 
 ### PUT
 
@@ -59,7 +72,17 @@ $ curl -s -w '\n%{http_code}\n' -X PUT \
     "localhost:8000/employees"
 ```
 
-You should receive a 201 Created.
+### GET
+
+```
+// GET ALL
+$ curl -s -w '\n%{http_code}\n' "localhost:8000/employees" | jq
+```
+
+```
+// GET BY ID
+$ curl -s -w '\n%{http_code}\n' "localhost:8000/employees/<employee_id>"
+```
 
 ### POST
 
@@ -81,9 +104,10 @@ $ curl -s -w '\n%{http_code}\n' -X DELETE \
 ```
 
 
+
 <br/>
 
-### Run in kubernetes
+## Run in kubernetes
 
 This is a demonstration project for using [Skaffold][0] to pipeline the development of your [Rust][1] web applications to Kubernetes on minikube.
 
