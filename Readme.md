@@ -380,3 +380,14 @@ data:
 
 The value for `key` is base64 encoded `DATABASE_URL` and the `value` is base64 of `postgres://diesel:pA55w0rd1@rust-web-demo-postgres:5432/rust-web-demo`.
 
+
+<br/>
+
+---
+
+<br/>
+
+**Marley**
+
+Any questions in english: <a href="https://jsdev.org/chat/">Telegram Chat</a>  
+Любые вопросы на русском: <a href="https://jsdev.ru/chat/">Телеграм чат</a>
