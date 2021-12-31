@@ -1,10 +1,14 @@
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: rust-web-demo
+  name: rust-web-demo-ingress-svc
+  annotations:
+    nginx.ingress.kubernetes.io/default-backend: ingress-nginx-controller
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/use-regex: 'true'
 spec:
   rules:
-  - host: DEMO_DOMAIN
+  - host: 192.168.49.2.nip.io
     http:
       paths:
       - backend:

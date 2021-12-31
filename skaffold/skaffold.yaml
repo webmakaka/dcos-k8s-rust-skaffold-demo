@@ -2,16 +2,15 @@ apiVersion: skaffold/v2beta26
 kind: Config
 build:
   artifacts:
-  - imageName: docker.io/YOUR_USERNAME/rust-web-demo
-    workspace: .
-    docker: {}
-    bazel: null
-  local:
-    skipPush: null
-  googleCloudBuild: null
-  kaniko: null
+  - image: docker.io/webmakaka/rust-web-demo
+    context: ../app
+    docker:
+      dockerfile: Dockerfile
+    sync:
+      manual:
+        - src: 'src/**/*.rs'
+          dest: .
 deploy:
-  helm: null
   kubectl:
     manifests:
-    - skaffold-deployment.yaml
+    - ../k8s/*
