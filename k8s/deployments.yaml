@@ -18,6 +18,12 @@ spec:
         ports:
         - containerPort: 8000
         env:
+        - name: ROCKET_ENV
+          value: "prod"
+        - name: ROCKET_ADDRESS
+          value: "0.0.0.0"
+        - name: ROCKET_PORT
+          value: "8000"
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
@@ -49,4 +55,4 @@ spec:
         - name: POSTGRES_USER
           value: diesel
         - name: POSTGRES_PASSWORD
-          value: changeme
+          value: p@55w0rd1
