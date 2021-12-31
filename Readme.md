@@ -1,4 +1,4 @@
-# Deploying Rust to Kubernetes on minikube with Skaffold [Actual on january 2022] 
+# Deploying Rust in Kubernetes (minikube) with Skaffold [Actual on january 2022] 
 
 [YouTube conference recording](https://www.youtube.com/watch?v=9S1-69Rp1vQ)
 
@@ -240,7 +240,7 @@ $ export INGRESS_HOST=192.168.49.2.nip.io
 
 <br/>
 
-## Using the API (NOT WORKS FOR NOW!)
+## Using the API
 
 
 ### GET
