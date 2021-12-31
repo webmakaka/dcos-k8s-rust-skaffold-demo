@@ -334,6 +334,7 @@ $ curl -s -w '\n%{http_code}\n' "localhost:8000/employees/<employee_id>"
 
 ```
 // ADD NEW
+// Run a few times. Not works in first run
 $ curl -s -w '\n%{http_code}\n' -X PUT \
     -H 'Content-Type: application/json' \
     -d '{"fname":"new", "lname":"person", "age": 27, "title":"Devops Engineer"}' \
