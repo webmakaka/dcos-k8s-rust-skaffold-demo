@@ -22,7 +22,7 @@ $ sudo vi /etc/hosts
 <br/>
 
 ```
-127.0.0.1 postgres
+127.0.0.1 rust-web-demo-postgres
 ```
 
 <br/>
@@ -114,6 +114,7 @@ https://shell.cloud.google.com/
 <br/>
 
 ```
+// Connect to free google clouds
 $ gcloud auth login
 $ gcloud cloud-shell ssh
 ```
@@ -172,15 +173,25 @@ $ cd k8s-rust-skaffold-demo/skaffold
 $ skaffold dev
 ```
 
+
+<br/>
+
+### Terminal 2
+
+
+```
+$ gcloud cloud-shell ssh
+```
+
 <br/>
 
 ```
 $ kubectl get pods
 NAME                                      READY   STATUS    RESTARTS   AGE
-rust-web-demo-6d5c4b5f84-4lcjx            1/1     Running   0          15s
-rust-web-demo-6d5c4b5f84-lc82j            1/1     Running   0          15s
-rust-web-demo-6d5c4b5f84-tm2xx            1/1     Running   0          15s
-rust-web-demo-postgres-797b7c9f67-nngrg   1/1     Running   0          15s
+rust-web-demo-69db76cd58-nh96h            1/1     Running   0          26s
+rust-web-demo-69db76cd58-xcbvk            1/1     Running   0          26s
+rust-web-demo-69db76cd58-xdnt5            1/1     Running   0          26s
+rust-web-demo-postgres-677848fd6c-wc9pp   1/1     Running   0          26s
 ```
 
 
@@ -192,8 +203,48 @@ $ kubectl port-forward $(kubectl get pods|awk '/^rust-web-demo-postgres.*Running
 
 <br/>
 
+### Terminal 3
+
+
+```
+$ gcloud cloud-shell ssh
+```
+
+
+<br/>
+
+```
+$ export \
+    PROFILE=${USER}-minikube \
+    MEMORY=8192 \
+    CPUS=4 \
+    DRIVER=docker \
+    KUBERNETES_VERSION=v1.23.1
+```
+
+<br/>
+
+```
+$ sudo vi /etc/hosts
+```
+
+<br/>
+
+```
+127.0.0.1 rust-web-demo-postgres
+```
+
+<br/>
+
 ```
 $ cd ~/tmp/k8s-rust-skaffold-demo/app/
+```
+
+<br/>
+
+```
+// CHECK Connection
+$ psql -U diesel -h localhost -p 5432 -d rust-web-demo
 ```
 
 <br/>
@@ -321,10 +372,10 @@ metadata:
   name: rust-web-demo-database-url
 type: Opaque
 data:
-  url: cG9zdGdyZXM6Ly9kaWVzZWw6cEA1NXcwcmQxQHJ1c3Qtd2ViLWRlbW8tcG9zdGdyZXM6NTQzMi9ydXN0LXdlYi1kZW1v
+  url: cG9zdGdyZXM6Ly9kaWVzZWw6cEE1NXcwcmQxQHJ1c3Qtd2ViLWRlbW8tcG9zdGdyZXM6NTQzMi9ydXN0LXdlYi1kZW1v
 ```
 
 <br/>
 
-The value for `key` is base64 encoded `DATABASE_URL` and the `value` is base64 of `postgres://diesel:p@55w0rd1@rust-web-demo-postgres:5432/rust-web-demo`.
+The value for `key` is base64 encoded `DATABASE_URL` and the `value` is base64 of `postgres://diesel:pA55w0rd1@rust-web-demo-postgres:5432/rust-web-demo`.
 
