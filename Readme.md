@@ -160,7 +160,7 @@ $ export \
 
 <br/>
 
-[Run minikube in free google clouds](//gitops.ru/containers/kubernetes/minikube/setup/)
+[Run minikube in free google clouds](//gitops.ru/tools/containers/kubernetes/minikube/setup/)
 
 <br/>
 
